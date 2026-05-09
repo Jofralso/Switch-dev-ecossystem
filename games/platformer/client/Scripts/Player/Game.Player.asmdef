@@ -1,0 +1,15 @@
+{
+    "name": "Game.Player",
+    "rootNamespace": "Game.Player",
+    "references": [
+        "Game.Core",
+        "Game.Gameplay"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": []
+}

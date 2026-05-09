@@ -1,0 +1,15 @@
+{
+  "name": "Framework.Core",
+  "rootNamespace": "Framework.Core",
+  "references": [
+    "Framework.Input",
+    "Framework.Audio"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": []
+}

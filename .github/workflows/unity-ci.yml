@@ -1,0 +1,143 @@
+name: Unity CI
+
+on:
+  push:
+    branches: [main, develop, feature/**]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+    inputs:
+      games:
+        description: 'Comma-separated list of games to build (empty = all)'
+        required: false
+        default: ''
+      target:
+        description: 'Build target (empty = StandaloneWindows64,StandaloneLinux64)'
+        required: false
+        default: ''
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Discover games to process
+  discover-games:
+    runs-on: ubuntu-latest
+    outputs:
+      game-list: ${{ steps.discover.outputs.game-list }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: discover
+        run: |
+          # Get list of games from workflow input or discover all
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ inputs.games }}" ]; then
+            echo "game-list=${{ inputs.games }}" >> $GITHUB_OUTPUT
+          else
+            # Auto-discover all games in games/ directory
+            GAMES=$(ls -1 games/ | tr '\n' ',' | sed 's/,$//')
+            echo "Discovered games: $GAMES"
+            echo "game-list=$GAMES" >> $GITHUB_OUTPUT
+          fi
+
+  # Lint job (runs once)
+  lint:
+    name: Static Analysis
+    needs: discover-games
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0'
+      
+      - name: Run dotnet format
+        run: |
+          dotnet format --verify-no-changes
+        continue-on-error: true
+
+  # Test matrix: run tests for each game
+  test:
+    name: Run Tests for ${{ matrix.game }}
+    needs: [discover-games, lint]
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        game: ${{ fromJson(needs.discover-games.outputs.game-list) }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Cache Unity Library
+        uses: actions/cache@v4
+        with:
+          path: games/${{ matrix.game }}/client/Library
+          key: Unity-Library-${{ matrix.game }}-${{ hashFiles('games/${{ matrix.game }}/client/Assets/**', 'games/${{ matrix.game }}/client/Packages/**') }}
+          restore-keys: |
+            Unity-Library-${{ matrix.game }}-
+      
+      - name: Run EditMode Tests
+        run: |
+          chmod +x ci/Scripts/run-tests.sh
+          ./ci/Scripts/run-tests.sh ${{ matrix.game }}
+      
+      - name: Upload Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.game }}
+          path: games/${{ matrix.game }}/client/TestResults/
+
+  # Profiling matrix: run benchmarks for each game
+  profiling:
+    name: Performance Profiling for ${{ matrix.game }}
+    needs: test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        game: ${{ fromJson(needs.discover-games.outputs.game-list) }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Run Benchmark Scene
+        run: |
+          chmod +x ci/Scripts/run-benchmarks.sh
+          ./ci/Scripts/run-benchmarks.sh ${{ matrix.game }}
+      
+      - name: Upload Profiling Data
+        uses: actions/upload-artifact@v4
+        with:
+          name: profiling-data-${{ matrix.game }}
+          path: profiling/Exports/
+
+  # Build matrix: build each game for each target
+  build:
+    name: Build ${{ matrix.game }} for ${{ matrix.target }}
+    needs: [discover-games, test]
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        game: ${{ fromJson(needs.discover-games.outputs.game-list) }}
+        target: ${{ fromJson(inputs.target && format('[\"{0}\"]', inputs.target) || '["StandaloneWindows64","StandaloneLinux64"]') }}
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Cache Unity Library
+        uses: actions/cache@v4
+        with:
+          path: games/${{ matrix.game }}/client/Library
+          key: Unity-Library-${{ matrix.game }}-${{ hashFiles('games/${{ matrix.game }}/client/Assets/**', 'games/${{ matrix.game }}/client/Packages/**') }}
+          restore-keys: |
+            Unity-Library-${{ matrix.game }}-
+      
+      - name: Build ${{ matrix.target }}
+        run: |
+          chmod +x ci/Scripts/build.sh
+          ./ci/Scripts/build.sh ${{ matrix.game }} ${{ matrix.target }}
+      
+      - name: Upload Build Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-${{ matrix.game }}-${{ matrix.target }}
+          path: games/${{ matrix.game }}/build/Artifacts/

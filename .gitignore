@@ -1,0 +1,57 @@
+# Unity
+games/*/client/Library/
+games/*/client/Logs/
+games/*/client/UserSettings/
+games/*/client/obj/
+games/*/client/Build/
+games/*/client/TestResults/
+games/*/client/*.csproj
+games/*/client/*.sln
+
+framework/*/Library/
+framework/*/Logs/
+framework/*/UserSettings/
+framework/*/obj/
+framework/*/Build/
+framework/*/TestResults/
+framework/*/*.csproj
+framework/*/*.sln
+
+# Build artifacts
+games/*/build/Artifacts/
+framework/build/Artifacts/
+
+# Profiling data
+profiling/Exports/
+profiling/Reports/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vs/
+.vscode/
+
+# Docker volumes
+data/
+
+# Environment
+.env
+*.env.local
+
+# Node
+node_modules/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.temp

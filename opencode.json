@@ -1,0 +1,21 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "default_agent": "forge-switch-architect",
+  "agent": {
+    "forge-switch-architect": {
+      "description": "Senior technical game architect for Unity & Nintendo Switch optimization, multiplayer, CI/CD",
+      "mode": "all",
+      "model": "opencode/big-pickle",
+      "temperature": 0.2,
+      "steps": 30,
+      "permission": {
+        "bash": "allow",
+        "edit": "allow",
+        "write": "allow",
+        "read": "allow",
+        "grep": "allow",
+        "glob": "allow"
+      }
+    }
+  }
+}
