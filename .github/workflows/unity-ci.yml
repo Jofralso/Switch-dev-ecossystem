@@ -36,6 +36,9 @@ jobs:
           else
             # Auto-discover all games in games/ directory
             GAMES=$(ls -1 games/ | tr '\n' ',' | sed 's/,$//')
+            if [ -z "$GAMES" ]; then
+              GAMES="platformer,rpg,shooter"
+            fi
             echo "Discovered games: $GAMES"
             echo "game-list=$GAMES" >> $GITHUB_OUTPUT
           fi
@@ -61,11 +64,12 @@ jobs:
   # Test matrix: run tests for each game
   test:
     name: Run Tests for ${{ matrix.game }}
-    needs: [discover-games, lint]
+    needs: discover-games
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        game: ${{ fromJson(needs.discover-games.outputs.game-list) }}
+        # Split the comma-separated list into an array
+        game: ${{ split(needs.discover-games.outputs.game-list, ',') }}
     steps:
       - uses: actions/checkout@v4
       
@@ -96,7 +100,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        game: ${{ fromJson(needs.discover-games.outputs.game-list) }}
+        # Split the comma-separated list into an array
+        game: ${{ split(needs.discover-games.outputs.game-list, ',') }}
     steps:
       - uses: actions/checkout@v4
       
@@ -118,8 +123,14 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        game: ${{ fromJson(needs.discover-games.outputs.game-list) }}
-        target: ${{ fromJson(inputs.target && format('[\"{0}\"]', inputs.target) || '["StandaloneWindows64","StandaloneLinux64"]') }}
+        # Split the comma-separated list into an array
+        game: ${{ split(needs.discover-games.outputs.game-list, ',') }}
+        # Handle target input - if empty or '*', use defaults
+        target: ${{ 
+          inputs.target != '' && inputs.target != '*' 
+            && split(inputs.target, ',') 
+            || ['StandaloneWindows64', 'StandaloneLinux64'] 
+        }}
     steps:
       - uses: actions/checkout@v4
       
