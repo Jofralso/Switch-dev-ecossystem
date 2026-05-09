@@ -86,8 +86,8 @@ The `framework/` directory contains reusable Unity systems:
 ### Setup
 1. Clone the repository:
    ```bash
-   git clone https://github.com/jofralso/switch-game-framework.git
-   cd switch-game-framework
+   git clone https://github.com/Jofralso/Switch-dev-ecossystem.git
+   cd Switch-dev-ecossystem
    ```
 
 2. Run the bootstrap script:
